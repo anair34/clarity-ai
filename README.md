@@ -141,9 +141,3 @@ supabase/
 docs/
   SUPABASE_SETUP.md
 ```
-
----
-
-## License
-
-Private project. All rights reserved unless you add a license file.

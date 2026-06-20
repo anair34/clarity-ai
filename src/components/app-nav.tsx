@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Brain, LogOut, Menu, Sparkles, X } from "lucide-react";
+import { Brain, Leaf, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { ClarityLogo } from "@/components/clarity-logo";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/reflect", label: "Reflect", icon: Sparkles },
+  { href: "/reflect", label: "Reflect", icon: Leaf },
   { href: "/insights", label: "Insights", icon: Brain },
   { href: "/prompts", label: "Prompts", icon: Menu },
 ];
@@ -30,11 +31,11 @@ export function AppNav() {
     <>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/reflect" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">Clarity</span>
+          <Link href="/reflect" className="flex items-center gap-2.5">
+            <ClarityLogo size="sm" />
+            <span className="text-lg font-semibold tracking-tight text-foreground">
+              Clarity
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">

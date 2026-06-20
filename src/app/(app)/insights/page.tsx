@@ -211,9 +211,9 @@ export default async function InsightsPage() {
                     className={cn(
                       "text-xs",
                       improvement === "Improved" &&
-                        "border-emerald-200 bg-emerald-50 text-emerald-700",
+                        "border-green-200 bg-green-50 text-green-800",
                       improvement === "Worse" &&
-                        "border-rose-200 bg-rose-50 text-rose-700"
+                        "border-stone-300 bg-stone-100 text-stone-700"
                     )}
                   >
                     {improvement}

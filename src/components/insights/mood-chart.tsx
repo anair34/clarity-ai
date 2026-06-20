@@ -53,7 +53,7 @@ export function MoodChart({ data }: MoodChartProps) {
                   "Starting mood",
                 ]}
               />
-              <Bar dataKey="score" fill="oklch(0.48 0.08 230)" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="score" fill="oklch(0.52 0.09 145)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

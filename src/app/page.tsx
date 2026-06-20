@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { ClarityLogo } from "@/components/clarity-logo";
 import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -17,8 +17,8 @@ export default async function HomePage() {
     <main className="flex flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Sparkles className="h-7 w-7" />
+          <div className="mx-auto mb-6 flex justify-center">
+            <ClarityLogo size="md" />
           </div>
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
             Move from confusion to clarity

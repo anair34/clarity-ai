@@ -63,11 +63,11 @@ export const FALLBACK_PROMPTS: Record<PromptCategory, string[]> = {
 };
 
 export const MOOD_COLORS: Record<InitialMood, string> = {
-  Great: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  Good: "bg-teal-100 text-teal-800 border-teal-200",
-  Okay: "bg-amber-100 text-amber-800 border-amber-200",
-  Bad: "bg-orange-100 text-orange-800 border-orange-200",
-  Terrible: "bg-rose-100 text-rose-800 border-rose-200",
+  Great: "bg-lime-100 text-lime-900 border-lime-200",
+  Good: "bg-green-100 text-green-800 border-green-200",
+  Okay: "bg-amber-50 text-amber-900 border-amber-200",
+  Bad: "bg-orange-50 text-orange-900 border-orange-200",
+  Terrible: "bg-stone-200 text-stone-800 border-stone-300",
 };
 
 export const FOLLOW_UP_PROMPT_COUNT = 3;
