@@ -1,11 +1,6 @@
-export type InitialMood = "Great" | "Good" | "Okay" | "Bad" | "Terrible";
+export type DetectedMood = "Happy" | "Sad" | "Angry" | "Frustrated";
 
-export type FinalMood =
-  | "Much better"
-  | "Better"
-  | "About the same"
-  | "Worse"
-  | "Much worse";
+export type MoodTrend = "worse" | "same" | "better";
 
 export type MessageRole = "user" | "assistant" | "system";
 
@@ -30,8 +25,8 @@ export interface ReflectionMessage {
 export interface ReflectionSession {
   id: string;
   user_id: string;
-  initial_mood: InitialMood | null;
-  final_mood: FinalMood | null;
+  initial_mood: DetectedMood | string | null;
+  final_mood: DetectedMood | string | null;
   primary_emotion: string | null;
   secondary_emotions: string[] | null;
   intensity: string | null;
@@ -42,15 +37,25 @@ export interface ReflectionSession {
   created_at: string;
 }
 
+export interface ReflectionTurnContext {
+  turnNumber: number;
+  sessionStartMood?: DetectedMood | string | null;
+  awaitingFeelingCheckIn?: boolean;
+}
+
 export interface AnalyzeReflectionResponse {
   primaryEmotion: string;
   secondaryEmotions: string[];
-  moodScore: InitialMood;
+  detectedMood: DetectedMood;
+  moodTrend: MoodTrend;
   intensity: string;
   topic: string;
   underlyingConcern: string;
   userFacingInsight: string;
   nextPrompt: string;
+  userSoundsMoreOptimistic: boolean;
+  shouldAskFeelingBetter: boolean;
+  readyToWrapUp: boolean;
 }
 
 export interface GenerateSummaryResponse {
@@ -58,6 +63,7 @@ export interface GenerateSummaryResponse {
   keyEmotion: string;
   keyConcern: string;
   suggestedNextPrompt: string;
+  detectedMood: DetectedMood;
 }
 
 export interface ChatMessage {

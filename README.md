@@ -6,9 +6,8 @@ This is a self-reflection tool, not therapy or medical advice.
 
 ## What it does
 
-- **Reflect** — mood check-in, guided follow-up questions, final mood check, session summary
+- **Reflect** — mood check-in, guided conversation, “I’m feeling lucky” random prompts, session summary
 - **Insights** — mood trends, common emotions/topics, improvement rate
-- **Prompts** — starter questions by category when you are not sure what to write
 
 ## Stack
 
@@ -128,7 +127,7 @@ Quick summary:
 ```
 src/
   app/
-    (app)/        # reflect, insights, prompts (auth required)
+    (app)/        # reflect, insights (auth required)
     api/          # OpenAI-backed route handlers
     auth/         # OAuth/magic-link callback
     login/ signup/

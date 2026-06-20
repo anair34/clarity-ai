@@ -6,13 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
@@ -69,14 +63,8 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="border-border/60 shadow-sm">
-      <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
-        <CardDescription>
-          Sign in to continue your reflection journey.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
+      <CardContent className="pt-6">
         <form onSubmit={handleLogin} className="space-y-4">
           {error && (
             <Alert variant="destructive">
@@ -89,42 +77,54 @@ export function LoginForm() {
             </Alert>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-ui">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
+              placeholder="you@example.com"
+              className="h-11 text-base"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-ui">
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
+              placeholder="Your password"
+              className="h-11 text-base"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="h-11 w-full text-base" size="lg" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign in
           </Button>
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="h-11 w-full text-base"
+            size="lg"
             disabled={loading || !email}
             onClick={handleMagicLink}
           >
             Send magic link
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-base leading-relaxed text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-medium text-primary hover:underline">
+          <Link
+            href="/signup"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             Sign up
           </Link>
         </p>

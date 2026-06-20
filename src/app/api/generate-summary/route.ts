@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { SUMMARY_SYSTEM_PROMPT } from "@/lib/ai/system-prompts";
+import { fetchReflectionMemory } from "@/lib/reflection-memory";
 import { createClient } from "@/lib/supabase/server";
-import type { ChatMessage, FinalMood, GenerateSummaryResponse, InitialMood } from "@/lib/types";
+import type { ChatMessage, GenerateSummaryResponse } from "@/lib/types";
 
 function getOpenAIClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -20,29 +21,21 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { sessionId, messages, initialMood, finalMood } = body as {
+    const { sessionId, messages } = body as {
       sessionId: string;
       messages: ChatMessage[];
-      initialMood: InitialMood;
-      finalMood: FinalMood;
     };
 
-    if (
-      !sessionId ||
-      !Array.isArray(messages) ||
-      messages.length === 0 ||
-      !initialMood ||
-      !finalMood
-    ) {
+    if (!sessionId || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
-        { error: "sessionId, messages, initialMood, and finalMood are required" },
+        { error: "sessionId and messages are required" },
         { status: 400 }
       );
     }
 
     const { data: session } = await supabase
       .from("reflection_sessions")
-      .select("id")
+      .select("id, initial_mood")
       .eq("id", sessionId)
       .eq("user_id", user.id)
       .single();
@@ -55,6 +48,24 @@ export async function POST(request: Request) {
       .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
       .join("\n");
 
+    const memoryContext = await fetchReflectionMemory(
+      supabase,
+      user.id,
+      sessionId
+    );
+
+    const userPromptParts = [
+      `Mood at start of session (AI-detected): ${session.initial_mood ?? "Unknown"}`,
+    ];
+
+    if (memoryContext) {
+      userPromptParts.push(
+        `Context from past reflections:\n${memoryContext}`
+      );
+    }
+
+    userPromptParts.push(`Reflection transcript:\n${transcript}`);
+
     const completion = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
@@ -62,7 +73,7 @@ export async function POST(request: Request) {
         { role: "system", content: SUMMARY_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Initial mood: ${initialMood}\nFinal mood (compared to start): ${finalMood}\n\nReflection transcript:\n${transcript}`,
+          content: userPromptParts.join("\n\n"),
         },
       ],
       temperature: 0.7,
@@ -84,7 +95,7 @@ export async function POST(request: Request) {
         summary: summaryData.summary,
         primary_emotion: summaryData.keyEmotion,
         underlying_concern: summaryData.keyConcern,
-        final_mood: finalMood,
+        final_mood: summaryData.detectedMood,
       })
       .eq("id", sessionId);
 

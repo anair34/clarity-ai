@@ -6,8 +6,8 @@ export function makeSession(
   return {
     id: "session-1",
     user_id: "user-1",
-    initial_mood: "Okay",
-    final_mood: "Better",
+    initial_mood: "Sad",
+    final_mood: "Happy",
     primary_emotion: "Anxiety",
     secondary_emotions: ["Stress"],
     intensity: "Medium",

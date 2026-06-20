@@ -33,7 +33,7 @@ Each authenticated reflection session triggers a small number of `gpt-4o-mini` c
 
 ## Authentication
 
-- `/reflect`, `/insights`, and `/prompts` are protected by middleware.
+- `/reflect` and `/insights` are protected by middleware.
 - API routes call `supabase.auth.getUser()` and return `401` when unauthenticated.
 - Session lookups also filter by `user_id` so one user cannot analyze another user’s session by ID guessing alone (returns 404).
 

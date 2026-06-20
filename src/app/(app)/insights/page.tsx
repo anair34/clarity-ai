@@ -16,9 +16,9 @@ import {
   getMostCommon,
   getWeeklyTrend,
 } from "@/lib/insights";
-import { MOOD_COLORS } from "@/lib/constants";
+import { MOOD_COLORS, DETECTED_MOODS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
-import type { InitialMood, ReflectionSession } from "@/lib/types";
+import type { DetectedMood, ReflectionSession } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function StatCard({
@@ -34,7 +34,7 @@ function StatCard({
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="pb-2">
         <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-3xl font-semibold">{value}</CardTitle>
+        <CardTitle className="text-stat">{value}</CardTitle>
       </CardHeader>
       {description && (
         <CardContent>
@@ -64,9 +64,7 @@ export default async function InsightsPage() {
   if (allSessions.length === 0) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Insights
-        </h1>
+        <h1 className="text-page-title">My Dashboard</h1>
         <Card className="border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>No reflections yet</CardTitle>
@@ -83,10 +81,8 @@ export default async function InsightsPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Insights
-        </h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-page-title">My Dashboard</h1>
+        <p className="text-subtitle">
           How you&apos;ve been feeling recently, and whether reflection is
           helping.
         </p>
@@ -97,7 +93,7 @@ export default async function InsightsPage() {
         <StatCard
           title="Improvement rate"
           value={`${improvementRate}%`}
-          description="Sessions where you felt better afterward"
+          description="Sessions where your mood improved by the end"
         />
         <StatCard
           title="This week"
@@ -121,11 +117,10 @@ export default async function InsightsPage() {
         <Card className="border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>Mood breakdown (7 days)</CardTitle>
-            <CardDescription>Starting moods from recent sessions</CardDescription>
+            <CardDescription>AI-detected moods from recent sessions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(["Great", "Good", "Okay", "Bad", "Terrible"] as InitialMood[]).map(
-              (mood) => (
+            {DETECTED_MOODS.map((mood) => (
                 <div key={mood} className="flex items-center justify-between">
                   <Badge
                     variant="outline"
@@ -137,8 +132,7 @@ export default async function InsightsPage() {
                     {weekMoodCounts[mood]} days
                   </span>
                 </div>
-              )
-            )}
+            ))}
           </CardContent>
         </Card>
       </div>
@@ -183,7 +177,7 @@ export default async function InsightsPage() {
         <CardContent className="space-y-4">
           {allSessions.slice(0, 10).map((session) => {
             const improvement = getImprovementLabel(
-              session.initial_mood as InitialMood,
+              session.initial_mood,
               session.final_mood
             );
 
@@ -198,12 +192,12 @@ export default async function InsightsPage() {
                   </span>
                   {session.initial_mood && (
                     <Badge variant="outline" className="text-xs">
-                      Started: {session.initial_mood}
+                      Start: {session.initial_mood}
                     </Badge>
                   )}
                   {session.final_mood && (
                     <Badge variant="outline" className="text-xs">
-                      Ended: {session.final_mood}
+                      End: {session.final_mood}
                     </Badge>
                   )}
                   <Badge

@@ -16,10 +16,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { InitialMood } from "@/lib/types";
+import type { DetectedMood } from "@/lib/types";
 
 interface MoodChartProps {
-  data: { date: string; score: number; mood: InitialMood }[];
+  data: { date: string; score: number; mood: DetectedMood | string }[];
 }
 
 export function MoodChart({ data }: MoodChartProps) {
@@ -38,7 +38,7 @@ export function MoodChart({ data }: MoodChartProps) {
     <Card className="border-border/60 shadow-sm">
       <CardHeader>
         <CardTitle>Weekly mood trend</CardTitle>
-        <CardDescription>Starting mood from your recent sessions</CardDescription>
+        <CardDescription>AI-detected mood from your recent sessions</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-64 w-full">
@@ -46,7 +46,7 @@ export function MoodChart({ data }: MoodChartProps) {
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 12 }} />
+              <YAxis domain={[1, 4]} ticks={[1, 2, 3, 4]} tick={{ fontSize: 12 }} />
               <Tooltip
                 formatter={(value, _name, item) => [
                   item.payload.mood,

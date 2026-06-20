@@ -15,21 +15,29 @@ describe("REFLECTION_SYSTEM_PROMPT safety", () => {
     "self-harm",
     "primaryEmotion",
     "underlyingConcern",
+    "shouldAskFeelingBetter",
+    "readyToWrapUp",
+    "moodTrend",
   ])("includes required guidance token: %s", (token) => {
     expect(REFLECTION_SYSTEM_PROMPT).toContain(token);
   });
 
-  it("forbids prescriptive fix-it responses implicitly via guidelines", () => {
-    expect(REFLECTION_SYSTEM_PROMPT.toLowerCase()).toContain("do not give advice");
+  it("uses a dynamic flow instead of a fixed question count", () => {
+    expect(REFLECTION_SYSTEM_PROMPT).toContain("no fixed question count");
+    expect(REFLECTION_SYSTEM_PROMPT).toContain("Feeling-better check-ins");
   });
 
   it("asks for exactly one follow-up question", () => {
-    expect(REFLECTION_SYSTEM_PROMPT).toContain("ONE thoughtful follow-up question");
+    expect(REFLECTION_SYSTEM_PROMPT).toContain("ONE follow-up");
+  });
+
+  it("includes memory guidance for past reflections", () => {
+    expect(REFLECTION_SYSTEM_PROMPT).toContain("Memory from past reflections");
   });
 });
 
 describe("SUMMARY_SYSTEM_PROMPT safety", () => {
-  it.each(["valid JSON", "summary", "keyEmotion", "suggestedNextPrompt", "NOT a therapist"])(
+  it.each(["valid JSON", "summary", "keyEmotion", "suggestedNextPrompt", "detectedMood", "NOT a therapist"])(
     "includes %s",
     (token) => {
       expect(SUMMARY_SYSTEM_PROMPT).toContain(token);
@@ -47,8 +55,8 @@ describe("PROMPT_GENERATOR_SYSTEM_PROMPT safety", () => {
 });
 
 describe("prompt JSON schemas", () => {
-  it("lists all five mood score options in reflection prompt", () => {
-    for (const mood of ["Great", "Good", "Okay", "Bad", "Terrible"]) {
+  it("lists all four detected mood options in reflection prompt", () => {
+    for (const mood of ["Happy", "Sad", "Angry", "Frustrated"]) {
       expect(REFLECTION_SYSTEM_PROMPT).toContain(mood);
     }
   });

@@ -7,13 +7,13 @@ import {
   getMostCommon,
   getWeeklyTrend,
 } from "@/lib/insights";
-import { INITIAL_MOODS } from "@/lib/constants";
+import { DETECTED_MOODS } from "@/lib/constants";
 import { makeSession } from "@/test/factories";
 
 describe("countMoods", () => {
   it("returns zero counts for an empty session list", () => {
     const counts = countMoods([]);
-    for (const mood of INITIAL_MOODS) {
+    for (const mood of DETECTED_MOODS) {
       expect(counts[mood]).toBe(0);
     }
   });
@@ -21,13 +21,13 @@ describe("countMoods", () => {
   it("ignores sessions with null initial mood", () => {
     const counts = countMoods([
       makeSession({ initial_mood: null }),
-      makeSession({ initial_mood: "Good" }),
+      makeSession({ initial_mood: "Happy" }),
     ]);
-    expect(counts.Good).toBe(1);
-    expect(counts.Great).toBe(0);
+    expect(counts.Happy).toBe(1);
+    expect(counts.Sad).toBe(0);
   });
 
-  it.each(INITIAL_MOODS)("counts a single %s session", (mood) => {
+  it.each(DETECTED_MOODS)("counts a single %s session", (mood) => {
     const counts = countMoods([makeSession({ initial_mood: mood })]);
     expect(counts[mood]).toBe(1);
   });
@@ -65,25 +65,25 @@ describe("getImprovementRate", () => {
 
   it("returns 100 when every completed session improved", () => {
     const sessions = [
-      makeSession({ final_mood: "Better" }),
-      makeSession({ final_mood: "Much better" }),
+      makeSession({ initial_mood: "Sad", final_mood: "Happy" }),
+      makeSession({ initial_mood: "Angry", final_mood: "Happy" }),
     ];
     expect(getImprovementRate(sessions)).toBe(100);
   });
 
   it("returns 0 when no sessions improved", () => {
     const sessions = [
-      makeSession({ final_mood: "Worse" }),
-      makeSession({ final_mood: "About the same" }),
+      makeSession({ initial_mood: "Happy", final_mood: "Sad" }),
+      makeSession({ initial_mood: "Frustrated", final_mood: "Angry" }),
     ];
     expect(getImprovementRate(sessions)).toBe(0);
   });
 
   it("rounds to the nearest whole percent", () => {
     const sessions = [
-      makeSession({ final_mood: "Better" }),
-      makeSession({ final_mood: "Better" }),
-      makeSession({ final_mood: "Worse" }),
+      makeSession({ initial_mood: "Sad", final_mood: "Happy" }),
+      makeSession({ initial_mood: "Angry", final_mood: "Happy" }),
+      makeSession({ initial_mood: "Happy", final_mood: "Sad" }),
     ];
     expect(getImprovementRate(sessions)).toBe(67);
   });
@@ -154,34 +154,34 @@ describe("getWeeklyTrend", () => {
   it("maps mood to numeric score in trend data", () => {
     const trend = getWeeklyTrend([
       makeSession({
-        initial_mood: "Bad",
+        initial_mood: "Sad",
         created_at: "2026-06-19T10:00:00.000Z",
       }),
     ]);
-    expect(trend[0].score).toBe(2);
-    expect(trend[0].mood).toBe("Bad");
+    expect(trend[0].score).toBe(1);
+    expect(trend[0].mood).toBe("Sad");
   });
 
   it("sorts trend points chronologically", () => {
     const trend = getWeeklyTrend([
       makeSession({
         id: "later",
-        initial_mood: "Good",
+        initial_mood: "Happy",
         created_at: "2026-06-19T10:00:00.000Z",
       }),
       makeSession({
         id: "earlier",
-        initial_mood: "Okay",
+        initial_mood: "Frustrated",
         created_at: "2026-06-18T10:00:00.000Z",
       }),
     ]);
-    expect(trend[0].mood).toBe("Okay");
-    expect(trend[1].mood).toBe("Good");
+    expect(trend[0].mood).toBe("Frustrated");
+    expect(trend[1].mood).toBe("Happy");
   });
 });
 
 describe("getImprovementLabel export", () => {
   it("re-exports improvement labels from constants", () => {
-    expect(getImprovementLabel("Bad", "Better")).toBe("Improved");
+    expect(getImprovementLabel("Sad", "Happy")).toBe("Improved");
   });
 });

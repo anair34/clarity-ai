@@ -1,81 +1,78 @@
 import { describe, expect, it } from "vitest";
 import {
   FALLBACK_PROMPTS,
-  FINAL_MOODS,
-  FOLLOW_UP_PROMPT_COUNT,
+  DETECTED_MOODS,
+  MAX_REFLECTION_TURNS,
+  MIN_TURNS_BEFORE_CHECK_IN,
   getImprovementLabel,
-  INITIAL_MOODS,
+  getReflectionPhase,
+  getReflectionPhaseLabel,
   isImproved,
   MOOD_COLORS,
   PROMPT_CATEGORIES,
 } from "@/lib/constants";
-import type { FinalMood, InitialMood } from "@/lib/types";
+import type { DetectedMood } from "@/lib/types";
 
 describe("isImproved", () => {
-  it.each<[FinalMood, boolean]>([
-    ["Much better", true],
-    ["Better", true],
-    ["About the same", false],
-    ["Worse", false],
-    ["Much worse", false],
-  ])("returns %s -> %s", (mood, expected) => {
-    expect(isImproved(mood)).toBe(expected);
+  it.each<[DetectedMood, DetectedMood, boolean]>([
+    ["Sad", "Happy", true],
+    ["Angry", "Frustrated", false],
+    ["Frustrated", "Happy", true],
+    ["Happy", "Sad", false],
+    ["Sad", "Sad", false],
+  ])("%s -> %s = %s", (initial, final, expected) => {
+    expect(isImproved(initial, final)).toBe(expected);
   });
 });
 
 describe("getImprovementLabel", () => {
-  it.each<[InitialMood, FinalMood, string]>([
-    ["Terrible", "Much better", "Improved"],
-    ["Terrible", "Better", "Improved"],
-    ["Terrible", "About the same", "Same"],
-    ["Terrible", "Worse", "Worse"],
-    ["Terrible", "Much worse", "Worse"],
-    ["Bad", "Much better", "Improved"],
-    ["Bad", "Better", "Improved"],
-    ["Bad", "About the same", "Same"],
-    ["Bad", "Worse", "Worse"],
-    ["Bad", "Much worse", "Worse"],
-    ["Okay", "Much better", "Improved"],
-    ["Okay", "Better", "Improved"],
-    ["Okay", "About the same", "Same"],
-    ["Okay", "Worse", "Worse"],
-    ["Okay", "Much worse", "Worse"],
-    ["Good", "Much better", "Improved"],
-    ["Good", "Better", "Improved"],
-    ["Good", "About the same", "Same"],
-    ["Good", "Worse", "Worse"],
-    ["Good", "Much worse", "Worse"],
-    ["Great", "Much better", "Improved"],
-    ["Great", "Better", "Improved"],
-    ["Great", "About the same", "Same"],
-    ["Great", "Worse", "Worse"],
-    ["Great", "Much worse", "Worse"],
+  it.each<[DetectedMood, DetectedMood, string]>([
+    ["Sad", "Happy", "Improved"],
+    ["Angry", "Frustrated", "Same"],
+    ["Happy", "Sad", "Worse"],
+    ["Frustrated", "Frustrated", "Same"],
   ])("%s + %s => %s", (initial, final, expected) => {
     expect(getImprovementLabel(initial, final)).toBe(expected);
   });
 
   it.each([
-    [null, "Better"],
-    ["Bad", null],
+    [null, "Happy"],
+    ["Sad", null],
     [null, null],
   ] as const)("returns Unknown when data is incomplete (%s, %s)", (initial, final) => {
     expect(getImprovementLabel(initial, final)).toBe("Unknown");
   });
 });
 
+describe("reflection session phases", () => {
+  it("maps early turns to detect and explore, later to solve", () => {
+    expect(getReflectionPhase(1)).toBe("detect");
+    expect(getReflectionPhase(2)).toBe("explore");
+    expect(getReflectionPhase(7)).toBe("solve");
+  });
+
+  it("provides human-readable phase labels", () => {
+    expect(getReflectionPhaseLabel(1)).toBe("Understanding how you feel");
+    expect(getReflectionPhaseLabel(3)).toBe("Going deeper");
+    expect(getReflectionPhaseLabel(8)).toBe("Finding a path forward");
+    expect(
+      getReflectionPhaseLabel(3, { awaitingFeelingCheckIn: true })
+    ).toBe("Checking in");
+  });
+});
+
 describe("mood and prompt constants", () => {
-  it("uses exactly three follow-up prompts per session", () => {
-    expect(FOLLOW_UP_PROMPT_COUNT).toBe(3);
+  it("caps reflection length with a max turn count", () => {
+    expect(MAX_REFLECTION_TURNS).toBe(12);
   });
 
-  it("defines five initial moods", () => {
-    expect(INITIAL_MOODS).toHaveLength(5);
-    expect(new Set(INITIAL_MOODS).size).toBe(5);
+  it("waits before feeling-better check-ins", () => {
+    expect(MIN_TURNS_BEFORE_CHECK_IN).toBe(2);
   });
 
-  it("defines five final mood options", () => {
-    expect(FINAL_MOODS).toHaveLength(5);
-    expect(new Set(FINAL_MOODS).size).toBe(5);
+  it("defines four detected moods", () => {
+    expect(DETECTED_MOODS).toHaveLength(4);
+    expect(new Set(DETECTED_MOODS).size).toBe(4);
   });
 
   it("defines eight prompt categories", () => {
@@ -85,7 +82,7 @@ describe("mood and prompt constants", () => {
 });
 
 describe("MOOD_COLORS", () => {
-  it.each(INITIAL_MOODS)("includes tailwind classes for %s", (mood) => {
+  it.each(DETECTED_MOODS)("includes tailwind classes for %s", (mood) => {
     const classes = MOOD_COLORS[mood];
     expect(classes).toContain("border");
     expect(classes.length).toBeGreaterThan(10);

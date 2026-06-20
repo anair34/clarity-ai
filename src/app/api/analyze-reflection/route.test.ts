@@ -111,8 +111,26 @@ describe("POST /api/analyze-reflection success path", () => {
     expect(userContent).toContain("Assistant: First question");
   });
 
-  it("persists extracted emotions to the session row", async () => {
-    const { chain, updateEq } = mockReflectionSupabase();
+  it("persists extracted emotions and initial detected mood to the session row", async () => {
+    const { chain, updateEq } = mockReflectionSupabase({
+      session: { id: "session-123", initial_mood: null },
+    });
+    await callAnalyzeReflection(validBody);
+    expect(chain.update).toHaveBeenCalledWith({
+      primary_emotion: mockAnalysis.primaryEmotion,
+      secondary_emotions: mockAnalysis.secondaryEmotions,
+      intensity: mockAnalysis.intensity,
+      topic: mockAnalysis.topic,
+      underlying_concern: mockAnalysis.underlyingConcern,
+      initial_mood: mockAnalysis.detectedMood,
+    });
+    expect(updateEq).toHaveBeenCalledWith("id", "session-123");
+  });
+
+  it("does not overwrite an existing initial mood", async () => {
+    const { chain } = mockReflectionSupabase({
+      session: { id: "session-123", initial_mood: "Sad" },
+    });
     await callAnalyzeReflection(validBody);
     expect(chain.update).toHaveBeenCalledWith({
       primary_emotion: mockAnalysis.primaryEmotion,
@@ -121,7 +139,6 @@ describe("POST /api/analyze-reflection success path", () => {
       topic: mockAnalysis.topic,
       underlying_concern: mockAnalysis.underlyingConcern,
     });
-    expect(updateEq).toHaveBeenCalledWith("id", "session-123");
   });
 
   it("scopes session lookup to the authenticated user", async () => {

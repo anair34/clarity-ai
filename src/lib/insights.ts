@@ -1,19 +1,20 @@
 import {
   getImprovementLabel,
-  INITIAL_MOODS,
+  DETECTED_MOODS,
   isImproved,
 } from "@/lib/constants";
-import { getInitialMoodScore } from "@/lib/moods";
-import type { InitialMood, ReflectionSession } from "@/lib/types";
+import { getMoodScore } from "@/lib/moods";
+import type { DetectedMood, ReflectionSession } from "@/lib/types";
 
 export function countMoods(sessions: ReflectionSession[]) {
   const counts = Object.fromEntries(
-    INITIAL_MOODS.map((mood) => [mood, 0])
-  ) as Record<InitialMood, number>;
+    DETECTED_MOODS.map((mood) => [mood, 0])
+  ) as Record<DetectedMood, number>;
 
   for (const session of sessions) {
-    if (session.initial_mood && counts[session.initial_mood as InitialMood] !== undefined) {
-      counts[session.initial_mood as InitialMood] += 1;
+    const mood = session.initial_mood;
+    if (mood && counts[mood as DetectedMood] !== undefined) {
+      counts[mood as DetectedMood] += 1;
     }
   }
 
@@ -36,10 +37,12 @@ export function getMostCommon(
 }
 
 export function getImprovementRate(sessions: ReflectionSession[]): number {
-  const completed = sessions.filter((s) => s.final_mood);
+  const completed = sessions.filter((s) => s.initial_mood && s.final_mood);
   if (completed.length === 0) return 0;
 
-  const improved = completed.filter((s) => isImproved(s.final_mood)).length;
+  const improved = completed.filter((s) =>
+    isImproved(s.initial_mood, s.final_mood)
+  ).length;
   return Math.round((improved / completed.length) * 100);
 }
 
@@ -57,14 +60,14 @@ export function getWeeklyTrend(sessions: ReflectionSession[]) {
 
   return recent.map((session) => {
     const date = new Date(session.created_at);
-    const mood = session.initial_mood as InitialMood;
+    const mood = session.initial_mood as DetectedMood;
     return {
       date: date.toLocaleDateString("en-US", {
         weekday: "short",
         month: "numeric",
         day: "numeric",
       }),
-      score: getInitialMoodScore(mood),
+      score: getMoodScore(mood),
       mood,
     };
   });

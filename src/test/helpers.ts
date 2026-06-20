@@ -8,13 +8,17 @@ export const mockUser = {
 export const mockAnalysis: AnalyzeReflectionResponse = {
   primaryEmotion: "Anxiety",
   secondaryEmotions: ["Overwhelm"],
-  moodScore: "Bad",
+  detectedMood: "Sad",
+  moodTrend: "same",
   intensity: "High",
   topic: "Career",
   underlyingConcern: "Fear of falling behind",
   userFacingInsight:
     "It sounds like you may be feeling anxious and overwhelmed about your progress.",
   nextPrompt: "What makes you feel like you are behind right now?",
+  userSoundsMoreOptimistic: false,
+  shouldAskFeelingBetter: false,
+  readyToWrapUp: false,
 };
 
 export const mockSummary: GenerateSummaryResponse = {
@@ -23,6 +27,7 @@ export const mockSummary: GenerateSummaryResponse = {
   keyEmotion: "Anxiety",
   keyConcern: "Comparison with peers",
   suggestedNextPrompt: "What would progress look like on your own timeline?",
+  detectedMood: "Frustrated",
 };
 
 export { makeSession, readJson } from "@/test/factories";

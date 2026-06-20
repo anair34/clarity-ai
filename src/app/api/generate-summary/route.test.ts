@@ -1,13 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SUMMARY_SYSTEM_PROMPT } from "@/lib/ai/system-prompts";
-import { FINAL_MOODS } from "@/lib/constants";
 import {
   callGenerateSummary,
   mockReflectionSupabase,
 } from "@/test/api-helpers";
 import { mockSummary, mockUser, readJson } from "@/test/helpers";
 import { mockOpenAICreate } from "@/test/setup-openai";
-import type { FinalMood, InitialMood } from "@/lib/types";
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
@@ -19,8 +17,6 @@ const baseBody = {
     { role: "user" as const, content: "I feel anxious" },
     { role: "assistant" as const, content: "What triggered that?" },
   ],
-  initialMood: "Bad" as InitialMood,
-  finalMood: "Better" as FinalMood,
 };
 
 describe("POST /api/generate-summary auth and validation", () => {
@@ -39,9 +35,7 @@ describe("POST /api/generate-summary auth and validation", () => {
   });
 
   it.each([
-    ["missing messages", { sessionId: "session-123", initialMood: "Bad", finalMood: "Better" }],
-    ["missing initialMood", { sessionId: "session-123", messages: baseBody.messages, finalMood: "Better" }],
-    ["missing finalMood", { sessionId: "session-123", messages: baseBody.messages, initialMood: "Bad" }],
+    ["missing messages", { sessionId: "session-123" }],
     ["empty messages array", { ...baseBody, messages: [] }],
   ])("returns 400 for %s", async (_label, body) => {
     mockReflectionSupabase();
@@ -71,20 +65,16 @@ describe("POST /api/generate-summary success path", () => {
     const body = await readJson<typeof mockSummary>(response);
     expect(response.status).toBe(200);
     expect(body.summary).toBe(mockSummary.summary);
+    expect(body.detectedMood).toBe(mockSummary.detectedMood);
   });
 
-  it.each(FINAL_MOODS)("accepts final mood option: %s", async (finalMood) => {
-    mockReflectionSupabase();
-    const response = await callGenerateSummary({ ...baseBody, finalMood });
-    expect(response.status).toBe(200);
-  });
-
-  it("includes initial and final mood in the model prompt", async () => {
-    mockReflectionSupabase();
+  it("includes the session's initial mood in the model prompt", async () => {
+    mockReflectionSupabase({
+      session: { id: "session-123", initial_mood: "Sad" },
+    });
     await callGenerateSummary(baseBody);
     const userContent = mockOpenAICreate.mock.calls[0][0].messages[1].content;
-    expect(userContent).toContain("Initial mood: Bad");
-    expect(userContent).toContain("Final mood (compared to start): Better");
+    expect(userContent).toContain("Mood at start of session (AI-detected): Sad");
   });
 
   it("uses the summary system prompt", async () => {
@@ -95,14 +85,14 @@ describe("POST /api/generate-summary success path", () => {
     );
   });
 
-  it("stores summary, emotion fields, and final mood", async () => {
+  it("stores summary, emotion fields, and AI-detected final mood", async () => {
     const { chain, updateEq } = mockReflectionSupabase();
     await callGenerateSummary(baseBody);
     expect(chain.update).toHaveBeenCalledWith({
       summary: mockSummary.summary,
       primary_emotion: mockSummary.keyEmotion,
       underlying_concern: mockSummary.keyConcern,
-      final_mood: "Better",
+      final_mood: mockSummary.detectedMood,
     });
     expect(updateEq).toHaveBeenCalledWith("id", "session-123");
   });

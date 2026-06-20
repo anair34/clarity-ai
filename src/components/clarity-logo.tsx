@@ -4,6 +4,7 @@ const sizeMap = {
   sm: "h-9 w-9",
   md: "h-14 w-14",
   lg: "h-16 w-16",
+  xl: "h-20 w-20",
 };
 
 interface ClarityLogoProps {

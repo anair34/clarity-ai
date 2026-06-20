@@ -1,19 +1,11 @@
-import type { FinalMood, InitialMood, PromptCategory } from "./types";
+import type { DetectedMood, PromptCategory } from "./types";
+import { getMoodScore } from "@/lib/moods";
 
-export const INITIAL_MOODS: InitialMood[] = [
-  "Great",
-  "Good",
-  "Okay",
-  "Bad",
-  "Terrible",
-];
-
-export const FINAL_MOODS: FinalMood[] = [
-  "Much better",
-  "Better",
-  "About the same",
-  "Worse",
-  "Much worse",
+export const DETECTED_MOODS: DetectedMood[] = [
+  "Happy",
+  "Sad",
+  "Angry",
+  "Frustrated",
 ];
 
 export const PROMPT_CATEGORIES: PromptCategory[] = [
@@ -62,26 +54,64 @@ export const FALLBACK_PROMPTS: Record<PromptCategory, string[]> = {
   ],
 };
 
-export const MOOD_COLORS: Record<InitialMood, string> = {
-  Great: "bg-lime-100 text-lime-900 border-lime-200",
-  Good: "bg-green-100 text-green-800 border-green-200",
-  Okay: "bg-amber-50 text-amber-900 border-amber-200",
-  Bad: "bg-orange-50 text-orange-900 border-orange-200",
-  Terrible: "bg-stone-200 text-stone-800 border-stone-300",
+export const MOOD_COLORS: Record<DetectedMood, string> = {
+  Happy: "bg-lime-100 text-lime-900 border-lime-200",
+  Sad: "bg-sky-100 text-sky-900 border-sky-200",
+  Angry: "bg-orange-100 text-orange-900 border-orange-200",
+  Frustrated: "bg-amber-50 text-amber-900 border-amber-200",
 };
 
-export const FOLLOW_UP_PROMPT_COUNT = 3;
+export const MAX_REFLECTION_TURNS = 12;
+/** @deprecated Use MAX_REFLECTION_TURNS — sessions no longer use a fixed question count. */
+export const FOLLOW_UP_PROMPT_COUNT = MAX_REFLECTION_TURNS;
 
-export function isImproved(finalMood: FinalMood | null): boolean {
-  return finalMood === "Much better" || finalMood === "Better";
+export const MIN_REFLECTION_WORDS = 50;
+export const MIN_TURNS_BEFORE_CHECK_IN = 2;
+
+export type ReflectionPhase = "detect" | "explore" | "solve";
+
+/** Which arc stage this assistant turn is in (1-based question number). */
+export function getReflectionPhase(
+  turnNumber: number,
+  total = MAX_REFLECTION_TURNS
+): ReflectionPhase {
+  if (turnNumber <= 1) return "detect";
+  if (turnNumber <= Math.ceil(total * 0.5)) return "explore";
+  return "solve";
+}
+
+export function getReflectionPhaseLabel(
+  turnNumber: number,
+  options?: { awaitingFeelingCheckIn?: boolean }
+): string {
+  if (options?.awaitingFeelingCheckIn) return "Checking in";
+  const phase = getReflectionPhase(turnNumber);
+  if (phase === "detect") return "Understanding how you feel";
+  if (phase === "explore") return "Going deeper";
+  return "Finding a path forward";
+}
+
+const DETECTED_MOOD_SET = new Set<string>(DETECTED_MOODS);
+
+export function isDetectedMood(value: string | null | undefined): value is DetectedMood {
+  return value != null && DETECTED_MOOD_SET.has(value);
+}
+
+export function isImproved(
+  initialMood: DetectedMood | string | null,
+  finalMood: DetectedMood | string | null
+): boolean {
+  if (!isDetectedMood(initialMood) || !isDetectedMood(finalMood)) return false;
+  return getMoodScore(finalMood) > getMoodScore(initialMood);
 }
 
 export function getImprovementLabel(
-  initialMood: InitialMood | null,
-  finalMood: FinalMood | null
+  initialMood: DetectedMood | string | null,
+  finalMood: DetectedMood | string | null
 ): "Improved" | "Same" | "Worse" | "Unknown" {
-  if (!initialMood || !finalMood) return "Unknown";
-  if (isImproved(finalMood)) return "Improved";
-  if (finalMood === "About the same") return "Same";
-  return "Worse";
+  if (!isDetectedMood(initialMood) || !isDetectedMood(finalMood)) return "Unknown";
+  const delta = getMoodScore(finalMood) - getMoodScore(initialMood);
+  if (delta > 0) return "Improved";
+  if (delta < 0) return "Worse";
+  return "Same";
 }

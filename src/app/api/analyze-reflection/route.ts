@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { buildReflectionUserPrompt } from "@/lib/ai/reflection-stream";
 import { REFLECTION_SYSTEM_PROMPT } from "@/lib/ai/system-prompts";
+import { fetchReflectionMemory } from "@/lib/reflection-memory";
 import { createClient } from "@/lib/supabase/server";
 import type { AnalyzeReflectionResponse, ChatMessage } from "@/lib/types";
 
@@ -20,10 +22,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { sessionId, userMessage, messageHistory } = body as {
+    const { sessionId, userMessage, messageHistory, turnContext } = body as {
       sessionId: string;
       userMessage: string;
       messageHistory: ChatMessage[];
+      turnContext?: import("@/lib/types").ReflectionTurnContext;
     };
 
     if (!sessionId || !userMessage?.trim()) {
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
 
     const { data: session } = await supabase
       .from("reflection_sessions")
-      .select("id")
+      .select("id, initial_mood")
       .eq("id", sessionId)
       .eq("user_id", user.id)
       .single();
@@ -44,9 +47,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    const historyText = (messageHistory ?? [])
-      .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
-      .join("\n");
+    const memoryContext = await fetchReflectionMemory(
+      supabase,
+      user.id,
+      sessionId
+    );
 
     const completion = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o-mini",
@@ -55,7 +60,12 @@ export async function POST(request: Request) {
         { role: "system", content: REFLECTION_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Conversation so far:\n${historyText}\n\nLatest user message:\n${userMessage}`,
+          content: buildReflectionUserPrompt(
+            userMessage,
+            messageHistory ?? [],
+            memoryContext,
+            turnContext
+          ),
         },
       ],
       temperature: 0.7,
@@ -71,15 +81,21 @@ export async function POST(request: Request) {
 
     const analysis = JSON.parse(content) as AnalyzeReflectionResponse;
 
+    const updates: Record<string, unknown> = {
+      primary_emotion: analysis.primaryEmotion,
+      secondary_emotions: analysis.secondaryEmotions,
+      intensity: analysis.intensity,
+      topic: analysis.topic,
+      underlying_concern: analysis.underlyingConcern,
+    };
+
+    if (!session.initial_mood) {
+      updates.initial_mood = analysis.detectedMood;
+    }
+
     await supabase
       .from("reflection_sessions")
-      .update({
-        primary_emotion: analysis.primaryEmotion,
-        secondary_emotions: analysis.secondaryEmotions,
-        intensity: analysis.intensity,
-        topic: analysis.topic,
-        underlying_concern: analysis.underlyingConcern,
-      })
+      .update(updates)
       .eq("id", sessionId);
 
     return NextResponse.json(analysis);

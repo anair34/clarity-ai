@@ -4,12 +4,17 @@ import { mockUser } from "@/test/helpers";
 
 export function mockReflectionSupabase(options?: {
   user?: typeof mockUser | null;
-  session?: { id: string } | null;
+  session?: { id: string; initial_mood?: string | null } | null;
+  pastSessions?: unknown[];
   updateError?: boolean;
 }) {
   const user = options?.user === undefined ? mockUser : options.user;
   const session =
-    options?.session === undefined ? { id: "session-123" } : options.session;
+    options?.session === undefined
+      ? { id: "session-123", initial_mood: null }
+      : options.session;
+
+  const pastSessions = options?.pastSessions ?? [];
 
   const updateEq = vi.fn().mockResolvedValue({
     error: options?.updateError ? { message: "update failed" } : null,
@@ -18,6 +23,9 @@ export function mockReflectionSupabase(options?: {
   const chain = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue({ data: pastSessions, error: null }),
     single: vi.fn().mockResolvedValue({
       data: session,
       error: session ? null : { message: "Not found" },
