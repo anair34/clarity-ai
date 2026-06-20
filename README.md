@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clarity
 
-## Getting Started
+Clarity is a private reflection journal. You check in with how you feel, answer a few guided follow-up questions, and see whether reflection helped over time.
 
-First, run the development server:
+This is a self-reflection tool, not therapy or medical advice.
+
+## What it does
+
+- **Reflect** — mood check-in, guided follow-up questions, final mood check, session summary
+- **Insights** — mood trends, common emotions/topics, improvement rate
+- **Prompts** — starter questions by category when you are not sure what to write
+
+## Stack
+
+- Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui
+- Supabase (Postgres + Auth)
+- OpenAI (`gpt-4o-mini`)
+- Recharts on the insights page
+
+---
+
+## Run it locally
+
+### Prerequisites
+
+- Node.js 20+
+- A [Supabase](https://supabase.com) project
+- An [OpenAI](https://platform.openai.com) API key with billing enabled
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/anair34/clarity-ai.git
+cd clarity-ai
+npm install
+```
+
+### 2. Environment variables
+
+```bash
+cp .env.local.example .env.local
+```
+
+Fill in `.env.local`:
+
+| Variable | Where to get it |
+|----------|-----------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → **Project URL** (no `/rest/v1/` suffix) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → **anon public** key |
+| `OPENAI_API_KEY` | [OpenAI API keys](https://platform.openai.com/api-keys) |
+
+Never commit `.env.local`. It is gitignored.
+
+### 3. Set up Supabase
+
+1. In the Supabase SQL Editor, run `supabase/schema.sql`.
+2. If inserts fail with “permission denied”, also run `supabase/fix-permissions.sql`.
+3. Under **Authentication → URL Configuration**:
+   - Site URL: `http://localhost:3000`
+   - Redirect URLs: `http://localhost:3000/auth/callback`
+4. Enable email auth under **Authentication → Providers**.
+
+Step-by-step notes live in `docs/SUPABASE_SETUP.md`.
+
+### 4. Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), sign up, and try a reflection on `/reflect`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Verify env vars (optional)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run check:env
+```
 
-## Learn More
+### 6. Run tests
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm test
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Tests mock OpenAI and Supabase — no API charges when running the suite.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local dev server |
+| `npm run build` | Production build |
+| `npm run start` | Run production build |
+| `npm test` | Unit + API route tests |
+| `npm run lint` | ESLint |
+| `npm run check:env` | Confirm `.env.local` is filled in |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Deploy (Vercel)
+
+1. Push this repo to GitHub.
+2. Import the project in [Vercel](https://vercel.com).
+3. Add the same three env vars from `.env.local` in Vercel project settings.
+4. Add your production URL to Supabase redirect URLs, e.g. `https://your-app.vercel.app/auth/callback`.
+
+Do not expose `OPENAI_API_KEY` in client code or `NEXT_PUBLIC_*` variables.
+
+---
+
+## Security
+
+See [SECURITY.md](./SECURITY.md) for how keys are handled and how row-level security protects user data.
+
+Quick summary:
+
+- OpenAI key stays on the server (API routes only).
+- Supabase **anon** key is public by design; **RLS** limits each user to their own rows.
+- Reflection pages require auth (middleware).
+- `.env.local` and other secret files are gitignored.
+
+---
+
+## Project layout
+
+```
+src/
+  app/
+    (app)/        # reflect, insights, prompts (auth required)
+    api/          # OpenAI-backed route handlers
+    auth/         # OAuth/magic-link callback
+    login/ signup/
+  components/
+  lib/            # Supabase clients, insights helpers, AI prompts
+  test/           # Vitest helpers and mocks
+supabase/
+  schema.sql
+  fix-permissions.sql
+docs/
+  SUPABASE_SETUP.md
+```
+
+---
+
+## License
+
+Private project. All rights reserved unless you add a license file.
